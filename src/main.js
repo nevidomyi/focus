@@ -149,7 +149,7 @@ function openSettings() {
   }
   const { workArea: wa } = screen.getPrimaryDisplay();
   settingsWin = new BrowserWindow({
-    width: 340, height: 420,
+    width: 340, height: 520,
     x: Math.round(wa.x + (wa.width  - 340) / 2),
     y: Math.round(wa.y + (wa.height - 420) / 2),
     frame: false, transparent: true,

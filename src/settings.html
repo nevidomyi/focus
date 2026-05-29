@@ -20,9 +20,17 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 16px;
-    -webkit-app-region: drag;
+    -webkit-app-region: no-drag;
     border-bottom: 1px solid rgba(255,255,255,0.07);
     flex-shrink: 0;
+  }
+
+  .drag-zone {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    -webkit-app-region: drag;
   }
 
   .title {
@@ -30,6 +38,14 @@
     font-weight: 600;
     color: rgba(255,255,255,0.8);
     letter-spacing: 0.02em;
+  }
+
+  /* Override popup.css: keep close-btn in flex flow so drag-zone can't cover it */
+  .titlebar .close-btn {
+    position: relative;
+    top: auto;
+    right: auto;
+    flex-shrink: 0;
   }
 
   .form {
@@ -159,8 +175,9 @@
 <body>
 <div class="card">
   <div class="titlebar">
-    <span class="title">Settings</span>
-    <button class="close-btn" onclick="cancel()">×</button>
+    <div class="drag-zone">
+      <span class="title">Settings</span>
+    </div>
   </div>
 
   <div class="form">
