@@ -1,7 +1,42 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen, dialog, Notification } = require('electron');
 const path = require('path');
 const fs   = require('fs');
 const { execSync } = require('child_process');
+const { autoUpdater } = require('electron-updater');
+
+// ─── Auto-update ──────────────────────────────────────────────────────────────
+
+function setupAutoUpdater() {
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-available', ({ version }) => {
+    new Notification({
+      title: 'FocusCode update available',
+      body: `Version ${version} is downloading in the background…`,
+    }).show();
+    updateTray();
+  });
+
+  autoUpdater.on('update-downloaded', ({ version }) => {
+    updateReady = true;
+    updateTray(); // shows "Restart to update" in menu
+    const choice = dialog.showMessageBoxSync({
+      type: 'info',
+      title: 'Update ready',
+      message: `FocusCode ${version} is ready.`,
+      buttons: ['Restart now', 'Later'],
+      defaultId: 0,
+    });
+    if (choice === 0) autoUpdater.quitAndInstall();
+  });
+
+  autoUpdater.on('error', () => { /* silently ignore in production */ });
+
+  // Check on startup, then every 4 hours
+  autoUpdater.checkForUpdates().catch(() => {});
+  setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1000);
+}
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -14,6 +49,7 @@ let sessionActive = false;
 let codeShowTimer = null;
 let codeHideTimer = null;
 let devFastMode = false;
+let updateReady = false;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -99,6 +135,10 @@ function buildMenu() {
   return Menu.buildFromTemplate([
     { label: 'FocusCode', enabled: false },
     { label: sessionActive ? '● Active' : '○ Paused', enabled: false },
+    ...(updateReady ? [
+      { type: 'separator' },
+      { label: '⬆ Restart to update', click: () => autoUpdater.quitAndInstall() },
+    ] : []),
     { type: 'separator' },
     {
       label: sessionActive ? 'Pause Session' : 'Start Session',
@@ -120,6 +160,8 @@ function buildMenu() {
         { label: 'Show fail popup',  click: () => showFail() },
         { type: 'separator' },
         { label: `Current code: ${currentCode || '—'}`, enabled: false },
+        { type: 'separator' },
+        { label: 'Check for updates', click: () => autoUpdater.checkForUpdates().catch(() => {}) },
       ],
     },
     { type: 'separator' },
@@ -156,6 +198,7 @@ app.whenReady().then(() => {
   tray = new Tray(icon);
   tray.on('click', () => tray.popUpContextMenu());
   updateTray();
+  setupAutoUpdater();
 
   ipcMain.on('check-code', (_, entered) => {
     if (entered === currentCode) {
