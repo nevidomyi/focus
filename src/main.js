@@ -173,11 +173,12 @@ function showCode() {
   const duration = settings.codeDurationSec * 1000;
   codeWin = makeWin('code-popup.html', 220, 185);
   codeWin.webContents.once('did-finish-load', () => {
-    if (codeWin && !codeWin.isDestroyed())
+    if (codeWin && !codeWin.isDestroyed()) {
       codeWin.webContents.send('show-code', currentCode, duration);
+      codeHideTimer = setTimeout(showInput, duration); // start only after window is visible
+    }
   });
   codeWin.on('closed', () => { codeWin = null; });
-  codeHideTimer = setTimeout(showInput, duration);
 }
 
 function showInput() {
