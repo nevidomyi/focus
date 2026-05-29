@@ -46,7 +46,7 @@
 </head>
 <body>
 <div class="card" onclick="focusInput()">
-  <button class="close-btn" onclick="event.stopPropagation(); ipcRenderer.send('pause-session')">×</button>
+  <button class="close-btn" onclick="event.stopPropagation(); showConfirm()">×</button>
   <div class="header">
     <div class="dot"></div>
     <span class="label">Enter code</span>
@@ -63,6 +63,15 @@
     </div>
   </div>
   <div class="hint" id="hint">click here, then type</div>
+
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-title">Pause session?</div>
+    <div class="confirm-sub">The current cycle will stop</div>
+    <div class="confirm-actions">
+      <button onclick="hideConfirm()">Continue</button>
+      <button class="danger" onclick="doPause()">Pause</button>
+    </div>
+  </div>
 </div>
 
 <input type="text" id="hiddenInput" inputmode="numeric" autocomplete="off">
@@ -70,13 +79,17 @@
 <script>
 const { ipcRenderer } = require('electron');
 
+function showConfirm() { document.getElementById('confirmOverlay').classList.add('visible'); }
+function hideConfirm() { document.getElementById('confirmOverlay').classList.remove('visible'); }
+function doPause()     { ipcRenderer.send('pause-session'); }
+
 const cells    = [0,1,2,3].map(i => document.getElementById('c' + i));
 const bar      = document.getElementById('bar');
 const hint     = document.getElementById('hint');
 const inputRow = document.getElementById('inputRow');
 const hidden   = document.getElementById('hiddenInput');
 
-const DURATION = 30;
+let DURATION = 30;
 let entered = '';
 let timerInterval = null;
 
@@ -114,7 +127,8 @@ ipcRenderer.on('wrong-code', () => {
   inputRow.addEventListener('animationend', () => inputRow.classList.remove('shake'), { once: true });
 });
 
-ipcRenderer.on('start-timer', () => {
+ipcRenderer.on('start-timer', (_, durationSec) => {
+  if (durationSec) DURATION = durationSec;
   updateCells();
 
   bar.style.transition = 'none';

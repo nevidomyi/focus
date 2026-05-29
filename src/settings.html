@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="popup.css">
+<style>
+  .card {
+    width: 340px;
+    height: 520px;
+    gap: 0;
+    justify-content: flex-start;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .titlebar {
+    width: 100%;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    -webkit-app-region: drag;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+  }
+
+  .title {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 0.02em;
+  }
+
+  .form {
+    flex: 1;
+    width: 100%;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    -webkit-app-region: no-drag;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .field-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  input[type="number"] {
+    width: 68px;
+    height: 34px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+    -webkit-app-region: no-drag;
+  }
+
+  input[type="number"]:focus {
+    border-color: rgba(96,165,250,0.7);
+    background: rgba(96,165,250,0.08);
+  }
+
+  input[type="number"]::-webkit-inner-spin-button { opacity: 0.4; }
+
+  .unit {
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+  }
+
+  .divider {
+    height: 1px;
+    background: rgba(255,255,255,0.07);
+    margin: 2px 0;
+  }
+
+  /* Toggle checkbox */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    -webkit-app-region: no-drag;
+  }
+
+  .toggle-row input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: #60a5fa;
+    cursor: pointer;
+  }
+
+  .toggle-label {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+  }
+
+  .sub-field {
+    padding-left: 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .actions {
+    width: 100%;
+    padding: 0 24px 20px;
+    display: flex;
+    gap: 10px;
+    -webkit-app-region: no-drag;
+    flex-shrink: 0;
+  }
+
+  .btn {
+    flex: 1;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.65);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.13s, color 0.13s;
+  }
+
+  .btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+  .btn.primary {
+    background: rgba(96,165,250,0.2);
+    border-color: rgba(96,165,250,0.4);
+    color: #93c5fd;
+  }
+
+  .btn.primary:hover { background: rgba(96,165,250,0.3); color: #bfdbfe; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="titlebar">
+    <span class="title">Settings</span>
+    <button class="close-btn" onclick="cancel()">×</button>
+  </div>
+
+  <div class="form">
+    <div class="field">
+      <span class="field-label">Code display duration</span>
+      <div class="field-row">
+        <input type="number" id="codeDuration" min="5" max="300">
+        <span class="unit">seconds</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">Input time limit</span>
+      <div class="field-row">
+        <input type="number" id="inputDuration" min="10" max="300">
+        <span class="unit">seconds</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Random interval toggle -->
+    <div class="field">
+      <label class="toggle-row">
+        <input type="checkbox" id="randomInterval" onchange="onRandomToggle()">
+        <span class="toggle-label">Random interval between rounds</span>
+      </label>
+    </div>
+
+    <!-- Sub-fields: range (shown when random is ON) -->
+    <div class="sub-field" id="randomFields">
+      <span class="field-label">Range</span>
+      <div class="field-row">
+        <span class="unit">from</span>
+        <input type="number" id="randomMin" min="1" max="120">
+        <span class="unit">to</span>
+        <input type="number" id="randomMax" min="1" max="120">
+        <span class="unit">min</span>
+      </div>
+    </div>
+
+    <!-- Fixed cooldown (shown when random is OFF) -->
+    <div class="field" id="cooldownNormalField">
+      <span class="field-label">Cooldown — normal mode</span>
+      <div class="field-row">
+        <input type="number" id="cooldownNormal" min="1" max="60">
+        <span class="unit">minutes</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <span class="field-label">Cooldown — fast mode</span>
+      <div class="field-row">
+        <input type="number" id="cooldownFast" min="5" max="300">
+        <span class="unit">seconds</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" onclick="cancel()">Cancel</button>
+    <button class="btn primary" onclick="save()">Save</button>
+  </div>
+</div>
+
+<script>
+const { ipcRenderer } = require('electron');
+
+const elRandomInterval    = document.getElementById('randomInterval');
+const elRandomFields      = document.getElementById('randomFields');
+const elCooldownNormal    = document.getElementById('cooldownNormalField');
+
+function onRandomToggle() {
+  const on = elRandomInterval.checked;
+  elRandomFields.style.display   = on ? 'flex' : 'none';
+  elCooldownNormal.style.display = on ? 'none' : 'flex';
+}
+
+ipcRenderer.invoke('get-settings').then(s => {
+  document.getElementById('codeDuration').value  = s.codeDurationSec;
+  document.getElementById('inputDuration').value = s.inputDurationSec;
+  document.getElementById('cooldownNormal').value = s.cooldownNormalMin;
+  document.getElementById('cooldownFast').value  = s.cooldownFastSec;
+  elRandomInterval.checked                        = s.randomInterval;
+  document.getElementById('randomMin').value      = s.randomIntervalMinMin;
+  document.getElementById('randomMax').value      = s.randomIntervalMinMax;
+  onRandomToggle();
+});
+
+function save() {
+  ipcRenderer.send('save-settings', {
+    codeDurationSec:      Number(document.getElementById('codeDuration').value),
+    inputDurationSec:     Number(document.getElementById('inputDuration').value),
+    cooldownNormalMin:    Number(document.getElementById('cooldownNormal').value),
+    cooldownFastSec:      Number(document.getElementById('cooldownFast').value),
+    randomInterval:       elRandomInterval.checked,
+    randomIntervalMinMin: Number(document.getElementById('randomMin').value),
+    randomIntervalMinMax: Number(document.getElementById('randomMax').value),
+  });
+}
+
+function cancel() { ipcRenderer.send('close-settings'); }
+</script>
+</body>
+</html>

@@ -46,7 +46,7 @@
 </head>
 <body>
 <div class="card">
-  <button class="close-btn" onclick="pause()">×</button>
+  <button class="close-btn" onclick="showConfirm()">×</button>
   <div class="header">
     <div class="dot"></div>
     <span class="label">Memorize</span>
@@ -63,13 +63,24 @@
     </div>
   </div>
   <div class="hint">keep it in your head</div>
+
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-title">Pause session?</div>
+    <div class="confirm-sub">The current cycle will stop</div>
+    <div class="confirm-actions">
+      <button onclick="hideConfirm()">Continue</button>
+      <button class="danger" onclick="doPause()">Pause</button>
+    </div>
+  </div>
 </div>
 
 <script>
 const { ipcRenderer } = require('electron');
 const bar = document.getElementById('bar');
 
-function pause() { ipcRenderer.send('pause-session'); }
+function showConfirm() { document.getElementById('confirmOverlay').classList.add('visible'); }
+function hideConfirm() { document.getElementById('confirmOverlay').classList.remove('visible'); }
+function doPause()     { ipcRenderer.send('pause-session'); }
 
 ipcRenderer.on('show-code', (_, code, durationMs) => {
   document.querySelectorAll('.digit').forEach((el, i) => { el.textContent = code[i]; });

@@ -44,7 +44,7 @@
 </head>
 <body>
 <div class="card">
-  <button class="close-btn" onclick="ipcRenderer.send('pause-session')">×</button>
+  <button class="close-btn" onclick="showConfirm()">×</button>
   <div class="top">
     <div class="header">
       <div class="dot"></div>
@@ -60,12 +60,24 @@
       <span class="icon">😴</span> Sleep &amp; rest
     </button>
   </div>
+
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-title">Pause session?</div>
+    <div class="confirm-sub">The current cycle will stop</div>
+    <div class="confirm-actions">
+      <button onclick="hideConfirm()">Continue</button>
+      <button class="danger" onclick="doPause()">Pause</button>
+    </div>
+  </div>
 </div>
 
 <script>
 const { ipcRenderer } = require('electron');
 function newCode()  { ipcRenderer.send('new-code'); }
 function sleepNow() { ipcRenderer.send('sleep-now'); }
+function showConfirm() { document.getElementById('confirmOverlay').classList.add('visible'); }
+function hideConfirm() { document.getElementById('confirmOverlay').classList.remove('visible'); }
+function doPause()     { ipcRenderer.send('pause-session'); }
 </script>
 </body>
 </html>

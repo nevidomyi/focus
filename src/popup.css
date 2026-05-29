@@ -77,3 +77,46 @@ body {
   -webkit-app-region: no-drag;
 }
 .close-btn:hover { background: rgba(255,255,255,0.16); color: rgba(255,255,255,0.75); }
+
+/* Pause confirmation overlay */
+.confirm-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: rgba(8, 8, 18, 0.97);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s;
+  z-index: 10;
+  -webkit-app-region: no-drag;
+}
+.confirm-overlay.visible { opacity: 1; pointer-events: all; }
+
+.confirm-title { font-size: 14px; font-weight: 600; color: #fff; }
+.confirm-sub   { font-size: 11px; color: rgba(255,255,255,0.32); text-align: center; padding: 0 20px; }
+
+.confirm-actions { display: flex; gap: 8px; margin-top: 2px; }
+.confirm-actions button {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.6);
+  font-size: 12px; font-family: inherit;
+  cursor: pointer;
+  transition: background 0.13s, color 0.13s;
+}
+.confirm-actions button:hover { background: rgba(255,255,255,0.11); color: #fff; }
+.confirm-actions button.danger {
+  background: rgba(248,113,113,0.14);
+  border-color: rgba(248,113,113,0.35);
+  color: #fca5a5;
+}
+.confirm-actions button.danger:hover { background: rgba(248,113,113,0.24); color: #fecaca; }
