@@ -37,35 +37,69 @@ function saveSettings(data) {
 
 // ─── Auto-update ──────────────────────────────────────────────────────────────
 
+function checkForUpdates() {
+  updateStatus = 'checking';
+  updateTray();
+  autoUpdater.checkForUpdates().catch(() => {
+    updateStatus = 'error';
+    updateTray();
+    new Notification({ title: 'FocusCode', body: 'Could not check for updates.' }).show();
+    setTimeout(() => { updateStatus = null; updateTray(); }, 6000);
+  });
+}
+
 function setupAutoUpdater() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
+  autoUpdater.on('checking-for-update', () => {
+    updateStatus = 'checking';
+    updateTray();
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    updateStatus = 'up-to-date';
+    updateTray();
+    new Notification({ title: 'FocusCode', body: 'You are on the latest version.' }).show();
+    setTimeout(() => { updateStatus = null; updateTray(); }, 6000);
+  });
+
   autoUpdater.on('update-available', ({ version }) => {
+    updateStatus = 'downloading';
+    updateTray();
     new Notification({
       title: 'FocusCode update available',
-      body: `Version ${version} is downloading in the background…`,
+      body: `v${version} is downloading in the background…`,
     }).show();
+  });
+
+  autoUpdater.on('download-progress', ({ percent }) => {
+    updateStatus = `downloading-${Math.round(percent)}%`;
     updateTray();
   });
 
   autoUpdater.on('update-downloaded', ({ version }) => {
+    updateStatus = 'ready';
     updateReady = true;
     updateTray();
     const choice = dialog.showMessageBoxSync({
       type: 'info',
       title: 'Update ready',
-      message: `FocusCode ${version} is ready.`,
+      message: `FocusCode v${version} is ready.`,
       buttons: ['Restart now', 'Later'],
       defaultId: 0,
     });
     if (choice === 0) autoUpdater.quitAndInstall();
   });
 
-  autoUpdater.on('error', () => {});
+  autoUpdater.on('error', () => {
+    updateStatus = 'error';
+    updateTray();
+    setTimeout(() => { updateStatus = null; updateTray(); }, 6000);
+  });
 
-  autoUpdater.checkForUpdates().catch(() => {});
-  setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1000);
+  checkForUpdates();
+  setInterval(checkForUpdates, 4 * 60 * 60 * 1000);
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -81,6 +115,7 @@ let codeShowTimer = null;
 let codeHideTimer = null;
 let devFastMode = false;
 let updateReady = false;
+let updateStatus = null; // null | 'checking' | 'up-to-date' | 'downloading' | 'ready' | 'error'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -206,9 +241,19 @@ function showFail() {
 
 // ─── Tray ─────────────────────────────────────────────────────────────────────
 
+function updateLabel() {
+  if (updateStatus === null)            return 'Check for updates';
+  if (updateStatus === 'checking')      return 'Checking…';
+  if (updateStatus === 'up-to-date')    return '✓ Up to date';
+  if (updateStatus === 'ready')         return '⬆ Update ready';
+  if (updateStatus === 'error')         return '✗ Check failed';
+  if (updateStatus.startsWith('downloading-')) return `Downloading ${updateStatus.slice(12)}`;
+  return 'Downloading…';
+}
+
 function buildMenu() {
   return Menu.buildFromTemplate([
-    { label: 'FocusCode', enabled: false },
+    { label: `FocusCode  v${app.getVersion()}`, enabled: false },
     { label: sessionActive ? '● Active' : '○ Paused', enabled: false },
     { label: modeLabel(), enabled: false },
     ...(updateReady ? [
@@ -238,7 +283,7 @@ function buildMenu() {
         { type: 'separator' },
         { label: `Current code: ${currentCode || '—'}`, enabled: false },
         { type: 'separator' },
-        { label: 'Check for updates', click: () => autoUpdater.checkForUpdates().catch(() => {}) },
+        { label: updateLabel(), click: () => checkForUpdates(), enabled: updateStatus === null || updateStatus === 'up-to-date' || updateStatus === 'error' },
       ],
     },
     { type: 'separator' },
