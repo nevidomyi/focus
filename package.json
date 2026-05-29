@@ -1,6 +1,6 @@
 {
   "name": "focuscode",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "macOS focus trainer — memorize a 4-digit code, recall it later",
   "main": "src/main.js",
   "scripts": {
