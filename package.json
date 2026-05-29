@@ -6,7 +6,8 @@
   "scripts": {
     "start": "ELECTRON_RUN_AS_NODE='' electron .",
     "build": "electron-builder --mac dmg",
-    "release": "electron-builder --mac dmg --publish always"
+    "build:win": "electron-builder --win nsis",
+    "release": "electron-builder --mac dmg --win nsis --publish always"
   },
   "build": {
     "appId": "com.focuscode.app",
@@ -30,10 +31,16 @@
     "dmg": {
       "title": "FocusCode",
       "icon": "src/icon.icns",
-      "window": {
-        "width": 540,
-        "height": 380
-      }
+      "window": { "width": 540, "height": 380 }
+    },
+    "win": {
+      "icon": "src/icon.ico",
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": true
     }
   },
   "dependencies": {
