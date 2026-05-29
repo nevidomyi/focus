@@ -15,6 +15,7 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
+      "icon": "src/icon.icns",
       "target": "dmg",
       "extendInfo": {
         "LSUIElement": true
@@ -22,6 +23,7 @@
     },
     "dmg": {
       "title": "FocusCode",
+      "icon": "src/icon.icns",
       "window": { "width": 540, "height": 380 }
     }
   },
