@@ -1,62 +1,7 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen } = require('electron');
 const path = require('path');
+const fs   = require('fs');
 const { execSync } = require('child_process');
-const zlib = require('zlib');
-
-// ─── Tray icon ────────────────────────────────────────────────────────────────
-// Generates a 22×22 RGBA PNG with a white filled circle — no asset file needed.
-
-function crc32(buf) {
-  const t = new Uint32Array(256);
-  for (let i = 0; i < 256; i++) {
-    let c = i;
-    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
-    t[i] = c;
-  }
-  let crc = 0xffffffff;
-  for (let i = 0; i < buf.length; i++) crc = t[(crc ^ buf[i]) & 0xff] ^ (crc >>> 8);
-  return (crc ^ 0xffffffff) >>> 0;
-}
-
-function pngChunk(type, data) {
-  const t = Buffer.from(type, 'ascii');
-  const len = Buffer.alloc(4);
-  len.writeUInt32BE(data.length, 0);
-  const crcBuf = Buffer.alloc(4);
-  crcBuf.writeUInt32BE(crc32(Buffer.concat([t, data])), 0);
-  return Buffer.concat([len, t, data, crcBuf]);
-}
-
-function makeTrayIcon() {
-  const W = 22, H = 22, cx = 11, cy = 11;
-  const rows = [];
-  for (let y = 0; y < H; y++) {
-    const row = Buffer.alloc(1 + W * 4);
-    for (let x = 0; x < W; x++) {
-      const dx = x + 0.5 - cx, dy = y + 0.5 - cy;
-      const d = Math.sqrt(dx * dx + dy * dy);
-      // Outer ring  8.5–10.5  +  inner dot  <3.5  → target / bullseye ◎
-      const onRing = d >= 8.5 && d <= 10.5;
-      const onDot  = d <= 3.5;
-      // 1-px soft edge
-      const ringA = onRing ? 255 : (d > 7.5 && d < 8.5 ? Math.round((d - 7.5) * 255) : d > 10.5 && d < 11.5 ? Math.round((11.5 - d) * 255) : 0);
-      const dotA  = onDot  ? 255 : (d > 3.5 && d < 4.5 ? Math.round((4.5 - d) * 255) : 0);
-      const alpha = Math.min(255, Math.max(ringA, dotA));
-      row[1 + x * 4] = 255; row[2 + x * 4] = 255; row[3 + x * 4] = 255;
-      row[4 + x * 4] = alpha;
-    }
-    rows.push(row);
-  }
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(H, 4);
-  ihdr[8] = 8; ihdr[9] = 6;
-  return Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    pngChunk('IHDR', ihdr),
-    pngChunk('IDAT', zlib.deflateSync(Buffer.concat(rows))),
-    pngChunk('IEND', Buffer.alloc(0)),
-  ]);
-}
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -74,11 +19,6 @@ let devFastMode = false;
 
 function generateCode() {
   return String(Math.floor(Math.random() * 9000) + 1000);
-}
-
-function randomMs() {
-  if (devFastMode) return 20 * 1000; // 20 sec in fast mode
-  return Math.floor((Math.random() * 10 + 5) * 60 * 1000); // 5–15 min
 }
 
 function cooldownMs() {
@@ -121,11 +61,10 @@ function clearTimers() {
 
 // ─── Game loop ────────────────────────────────────────────────────────────────
 
-function startCycle(initialDelayMs) {
+function startCycle(delayMs) {
   clearTimers();
   currentCode = generateCode();
-  const delay = initialDelayMs !== undefined ? initialDelayMs : randomMs();
-  codeShowTimer = setTimeout(showCode, delay);
+  codeShowTimer = setTimeout(showCode, delayMs);
 }
 
 function showCode() {
@@ -196,7 +135,7 @@ function updateTray() {
 function startSession() {
   sessionActive = true;
   updateTray();
-  startCycle(0); // show code immediately on session start
+  startCycle(0);
 }
 
 function pauseSession() {
@@ -211,31 +150,26 @@ function pauseSession() {
 app.whenReady().then(() => {
   app.dock?.hide();
 
-  const iconBuf = require('fs').readFileSync(path.join(__dirname, 'tray-icon.png'));
+  const iconBuf = fs.readFileSync(path.join(__dirname, 'tray-icon.png'));
   const icon = nativeImage.createFromBuffer(iconBuf, { scaleFactor: 2.0 });
   icon.setTemplateImage(true);
   tray = new Tray(icon);
   tray.on('click', () => tray.popUpContextMenu());
   updateTray();
 
-  // IPC
   ipcMain.on('check-code', (_, entered) => {
     if (entered === currentCode) {
       closeAll();
-      startCycle(cooldownMs()); // 5 min cooldown on success
+      startCycle(cooldownMs());
     } else {
       if (inputWin && !inputWin.isDestroyed()) inputWin.webContents.send('wrong-code');
     }
   });
 
-  ipcMain.on('time-up', () => showFail());
-
-  ipcMain.on('new-code', () => {
-    closeAll();
-    startCycle(cooldownMs());
-  });
-
-  ipcMain.on('sleep-now', () => {
+  ipcMain.on('pause-session', () => pauseSession());
+  ipcMain.on('time-up',       () => showFail());
+  ipcMain.on('new-code',      () => { closeAll(); startCycle(cooldownMs()); });
+  ipcMain.on('sleep-now',     () => {
     closeAll();
     try { execSync('pmset sleepnow'); } catch { /* non-mac or permission denied */ }
   });

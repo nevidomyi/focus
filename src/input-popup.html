@@ -2,60 +2,12 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<link rel="stylesheet" href="popup.css">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .card { height: 190px; gap: 14px; }
 
-  body {
-    background: transparent;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    user-select: none;
-    overflow: hidden;
-    -webkit-app-region: drag;
-  }
+  .dot { background: #facc15; box-shadow: 0 0 8px rgba(250,204,21,0.7); }
 
-  .card {
-    width: 220px;
-    height: 190px;
-    background: rgba(10, 10, 16, 0.93);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 16px;
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    box-shadow: 0 24px 64px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    animation: slideIn 0.28s cubic-bezier(0.34, 1.5, 0.64, 1);
-  }
-
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(14px) scale(0.94); }
-    to   { opacity: 1; transform: translateY(0)   scale(1); }
-  }
-
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-  }
-
-  .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: #facc15;
-    box-shadow: 0 0 8px rgba(250,204,21,0.7);
-  }
-
-  .label {
-    font-size: 10px;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.35);
-  }
-
-  /* Digit cells */
   .input-row {
     display: flex;
     gap: 8px;
@@ -68,23 +20,13 @@
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    font-weight: 700;
-    color: #fff;
+    font-size: 24px; font-weight: 700; color: #fff;
     transition: border-color 0.12s, background 0.12s;
   }
 
-  .cell.active {
-    border-color: rgba(250, 204, 21, 0.65);
-    background: rgba(250, 204, 21, 0.07);
-  }
+  .cell.active { border-color: rgba(250,204,21,0.65); background: rgba(250,204,21,0.07); }
+  .cell.filled { border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.06); }
 
-  .cell.filled {
-    border-color: rgba(255,255,255,0.22);
-    background: rgba(255,255,255,0.06);
-  }
-
-  /* Shake on wrong code — applied to the whole row */
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
     15%       { transform: translateX(-7px); }
@@ -93,49 +35,18 @@
     75%       { transform: translateX(5px); }
     90%       { transform: translateX(-2px); }
   }
+  .input-row.shake { animation: shake 0.42s ease; }
 
-  .input-row.shake {
-    animation: shake 0.42s ease;
-  }
+  .progress-wrap { width: 176px; -webkit-app-region: no-drag; }
 
-  /* Progress bar */
-  .progress-wrap {
-    width: 176px;
-    -webkit-app-region: no-drag;
-  }
+  .hint { font-size: 10px; color: rgba(255,255,255,0.22); letter-spacing: 0.05em; }
 
-  .progress-track {
-    height: 3px;
-    background: rgba(255,255,255,0.07);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .progress-bar {
-    height: 100%;
-    width: 100%;
-    background: #60a5fa;
-    border-radius: 2px;
-    transform-origin: left;
-  }
-
-  .hint {
-    font-size: 10px;
-    color: rgba(255,255,255,0.22);
-    letter-spacing: 0.05em;
-  }
-
-  /* Hidden input that captures keypresses */
-  input {
-    position: fixed;
-    opacity: 0;
-    pointer-events: none;
-    width: 0; height: 0;
-  }
+  input { position: fixed; opacity: 0; pointer-events: none; width: 0; height: 0; }
 </style>
 </head>
 <body>
 <div class="card" onclick="focusInput()">
+  <button class="close-btn" onclick="event.stopPropagation(); ipcRenderer.send('pause-session')">×</button>
   <div class="header">
     <div class="dot"></div>
     <span class="label">Enter code</span>
@@ -165,9 +76,9 @@ const hint     = document.getElementById('hint');
 const inputRow = document.getElementById('inputRow');
 const hidden   = document.getElementById('hiddenInput');
 
+const DURATION = 30;
 let entered = '';
 let timerInterval = null;
-const DURATION = 30; // seconds
 
 function focusInput() {
   hidden.focus();
@@ -178,8 +89,8 @@ function updateCells() {
   cells.forEach((c, i) => {
     c.textContent = entered[i] || '';
     c.className = 'cell';
-    if (i < entered.length)    c.classList.add('filled');
-    else if (i === entered.length) c.classList.add('active');
+    if (i < entered.length)         c.classList.add('filled');
+    else if (i === entered.length)  c.classList.add('active');
   });
 }
 
@@ -196,8 +107,7 @@ hidden.addEventListener('keydown', e => {
 
 ipcRenderer.on('wrong-code', () => {
   inputRow.classList.remove('shake');
-  // Force reflow so animation restarts cleanly
-  void inputRow.offsetWidth;
+  void inputRow.offsetWidth; // force reflow so animation restarts
   inputRow.classList.add('shake');
   entered = '';
   updateCells();
@@ -205,10 +115,8 @@ ipcRenderer.on('wrong-code', () => {
 });
 
 ipcRenderer.on('start-timer', () => {
-  let elapsed = 0;
   updateCells();
 
-  // CSS-driven shrink: transition width over DURATION seconds
   bar.style.transition = 'none';
   bar.style.width = '100%';
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -216,16 +124,14 @@ ipcRenderer.on('start-timer', () => {
     bar.style.width = '0%';
   }));
 
+  let elapsed = 0;
   timerInterval = setInterval(() => {
-    elapsed++;
-    const remaining = DURATION - elapsed;
-    if (elapsed >= DURATION) {
+    if (++elapsed >= DURATION) {
       clearInterval(timerInterval);
       ipcRenderer.send('time-up');
     }
   }, 1000);
 
-  // Auto-focus so keystrokes work immediately after user clicks the popup
   setTimeout(focusInput, 80);
 });
 

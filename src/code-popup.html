@@ -2,48 +2,11 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<link rel="stylesheet" href="popup.css">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: transparent;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    -webkit-app-region: drag;
-    user-select: none;
-    overflow: hidden;
-  }
-
-  .card {
-    width: 220px;
-    height: 185px;
-    background: rgba(10, 10, 16, 0.93);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 16px;
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    box-shadow: 0 24px 64px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    animation: slideIn 0.28s cubic-bezier(0.34, 1.5, 0.64, 1);
-  }
-
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(14px) scale(0.94); }
-    to   { opacity: 1; transform: translateY(0)   scale(1); }
-  }
-
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-  }
+  .card { height: 185px; gap: 14px; }
 
   .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
     background: #4ade80;
     box-shadow: 0 0 8px #4ade80;
     animation: pulse 2s ease-in-out infinite;
@@ -54,17 +17,7 @@
     50%       { opacity: 0.35; }
   }
 
-  .label {
-    font-size: 10px;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.35);
-  }
-
-  .code-row {
-    display: flex;
-    gap: 8px;
-  }
+  .code-row { display: flex; gap: 8px; }
 
   .digit {
     width: 36px; height: 46px;
@@ -72,9 +25,7 @@
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    font-weight: 700;
-    color: #fff;
+    font-size: 24px; font-weight: 700; color: #fff;
     animation: fadeUp 0.35s ease both;
   }
 
@@ -88,39 +39,19 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  .progress-wrap {
-    width: 176px;
-  }
+  .progress-wrap { width: 176px; }
 
-  .progress-track {
-    height: 3px;
-    background: rgba(255,255,255,0.07);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .progress-bar {
-    height: 100%;
-    width: 100%;
-    background: #60a5fa;
-    border-radius: 2px;
-    transform-origin: left;
-  }
-
-  .hint {
-    font-size: 10px;
-    color: rgba(255,255,255,0.2);
-    letter-spacing: 0.05em;
-  }
+  .hint { font-size: 10px; color: rgba(255,255,255,0.2); letter-spacing: 0.05em; }
 </style>
 </head>
 <body>
 <div class="card">
+  <button class="close-btn" onclick="pause()">×</button>
   <div class="header">
     <div class="dot"></div>
     <span class="label">Memorize</span>
   </div>
-  <div class="code-row" id="codeRow">
+  <div class="code-row">
     <div class="digit">–</div>
     <div class="digit">–</div>
     <div class="digit">–</div>
@@ -138,20 +69,17 @@
 const { ipcRenderer } = require('electron');
 const bar = document.getElementById('bar');
 
-ipcRenderer.on('show-code', (_, code, durationMs) => {
-  const digits = document.querySelectorAll('.digit');
-  code.split('').forEach((d, i) => { digits[i].textContent = d; });
+function pause() { ipcRenderer.send('pause-session'); }
 
-  const durationSec = durationMs / 1000;
+ipcRenderer.on('show-code', (_, code, durationMs) => {
+  document.querySelectorAll('.digit').forEach((el, i) => { el.textContent = code[i]; });
 
   bar.style.transition = 'none';
   bar.style.width = '100%';
-
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    bar.style.transition = `width ${durationSec}s linear`;
+    bar.style.transition = `width ${durationMs / 1000}s linear`;
     bar.style.width = '0%';
   }));
-
 });
 </script>
 </body>
