@@ -1,0 +1,12 @@
+{
+  "name": "focuscode",
+  "version": "1.0.0",
+  "description": "Focus trainer app",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "ELECTRON_RUN_AS_NODE='' electron ."
+  },
+  "devDependencies": {
+    "electron": "^42.3.0"
+  }
+}

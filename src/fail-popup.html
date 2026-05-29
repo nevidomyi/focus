@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: transparent;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    user-select: none;
+    -webkit-app-region: drag;
+    overflow: hidden;
+  }
+
+  .card {
+    width: 220px;
+    height: 175px;
+    background: rgba(10, 10, 16, 0.93);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 16px;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    animation: slideIn 0.28s cubic-bezier(0.34, 1.5, 0.64, 1);
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.94); }
+    to   { opacity: 1; transform: translateY(0)   scale(1); }
+  }
+
+  .top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #f87171;
+    box-shadow: 0 0 8px rgba(248,113,113,0.8);
+  }
+
+  .label {
+    font-size: 10px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+  }
+
+  .message {
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+    letter-spacing: 0.03em;
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    width: 180px;
+    -webkit-app-region: no-drag;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.09);
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.72);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.13s, border-color 0.13s, color 0.13s;
+    text-align: left;
+    width: 100%;
+  }
+
+  .btn:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.18);
+    color: #fff;
+  }
+
+  .btn.sleep:hover {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.45);
+    color: rgba(199, 200, 255, 0.9);
+  }
+
+  .icon { font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="top">
+    <div class="header">
+      <div class="dot"></div>
+      <span class="label">Focus lost</span>
+    </div>
+    <div class="message">Time's up — what next?</div>
+  </div>
+  <div class="actions">
+    <button class="btn" onclick="newCode()">
+      <span class="icon">🔄</span> New combination
+    </button>
+    <button class="btn sleep" onclick="sleepNow()">
+      <span class="icon">😴</span> Sleep &amp; rest
+    </button>
+  </div>
+</div>
+
+<script>
+const { ipcRenderer } = require('electron');
+function newCode()  { ipcRenderer.send('new-code'); }
+function sleepNow() { ipcRenderer.send('sleep-now'); }
+</script>
+</body>
+</html>
