@@ -170,13 +170,20 @@ function startCycle(delayMs) {
 
 function showCode() {
   closeAll();
-  const duration = settings.codeDurationSec * 1000;
+  const codeDuration     = settings.codeDurationSec * 1000;
+  const intervalDuration = cooldownMs(); // wait between code disappearing and input appearing
+
   codeWin = makeWin('code-popup.html', 220, 185);
   codeWin.webContents.once('did-finish-load', () => {
-    if (codeWin && !codeWin.isDestroyed()) {
-      codeWin.webContents.send('show-code', currentCode, duration);
-      codeHideTimer = setTimeout(showInput, duration); // start only after window is visible
-    }
+    if (!codeWin || codeWin.isDestroyed()) return;
+    codeWin.webContents.send('show-code', currentCode, codeDuration);
+
+    // After code is shown for codeDuration → close it → wait interval → show input
+    codeHideTimer = setTimeout(() => {
+      destroyWin(codeWin);
+      codeWin = null;
+      codeShowTimer = setTimeout(showInput, intervalDuration);
+    }, codeDuration);
   });
   codeWin.on('closed', () => { codeWin = null; });
 }
@@ -274,7 +281,9 @@ app.whenReady().then(() => {
   ipcMain.on('check-code', (_, entered) => {
     if (entered === currentCode) {
       closeAll();
-      startCycle(cooldownMs());
+      clearTimers();
+      currentCode = generateCode();
+      showCode(); // show next code immediately
     } else {
       if (inputWin && !inputWin.isDestroyed()) inputWin.webContents.send('wrong-code');
     }
@@ -282,7 +291,12 @@ app.whenReady().then(() => {
 
   ipcMain.on('pause-session', () => pauseSession());
   ipcMain.on('time-up',       () => showFail());
-  ipcMain.on('new-code',      () => { closeAll(); startCycle(cooldownMs()); });
+  ipcMain.on('new-code',      () => {
+    closeAll();
+    clearTimers();
+    currentCode = generateCode();
+    showCode(); // show next code immediately after fail
+  });
   ipcMain.on('sleep-now',     () => {
     closeAll();
     try { execSync('pmset sleepnow'); } catch {}
