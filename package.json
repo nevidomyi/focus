@@ -1,12 +1,32 @@
 {
   "name": "focuscode",
   "version": "1.0.0",
-  "description": "Focus trainer app",
+  "description": "macOS focus trainer — memorize a 4-digit code, recall it later",
   "main": "src/main.js",
   "scripts": {
-    "start": "ELECTRON_RUN_AS_NODE='' electron ."
+    "start": "ELECTRON_RUN_AS_NODE='' electron .",
+    "build": "electron-builder --mac dmg"
+  },
+  "build": {
+    "appId": "com.focuscode.app",
+    "productName": "FocusCode",
+    "files": [
+      "src/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": "dmg",
+      "extendInfo": {
+        "LSUIElement": true
+      }
+    },
+    "dmg": {
+      "title": "FocusCode",
+      "window": { "width": 540, "height": 380 }
+    }
   },
   "devDependencies": {
-    "electron": "^42.3.0"
+    "electron": "^42.3.0",
+    "electron-builder": "^26.8.1"
   }
 }
